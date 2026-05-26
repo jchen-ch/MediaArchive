@@ -49,7 +49,7 @@ export function EmbedPlayer({ embedCode, kalturaId, startTime, stopTime, title }
         /style="([^"]*)"/gi,
         (match, styleContent) => {
           // Remove width and height properties from style
-          let newStyle = styleContent
+          const newStyle = styleContent
             .replace(/\b(width|height)\s*:\s*[^;]+;?\s*/gi, '')
             .trim();
 
@@ -93,7 +93,7 @@ export function EmbedPlayer({ embedCode, kalturaId, startTime, stopTime, title }
         /style="([^"]*)"/gi,
         (match, styleContent) => {
           // Remove width and height properties from style
-          let newStyle = styleContent
+          const newStyle = styleContent
             .replace(/\b(width|height)\s*:\s*[^;]+;?\s*/gi, '')
             .trim();
 

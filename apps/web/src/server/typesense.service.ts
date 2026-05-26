@@ -84,9 +84,37 @@ export async function bulkUpsertToTypesense(
   }
 }
 
-/** Full re-sync from PostgreSQL — use for reconciliation only. */
-export async function fullSyncToTypesense() {
+/** Full re-sync from PostgreSQL — upserts all PG records and deletes stale Typesense documents. */
+export async function fullSyncToTypesense(): Promise<{ upserted: number; deleted: number }> {
   const records = await db.mediaRecord.findMany();
+  const pgIds = new Set(records.map((r) => r.id));
+
   await bulkUpsertToTypesense(records);
-  console.log(`[Typesense] Full sync complete — ${records.length} records.`);
+
+  // Export all IDs currently in Typesense to find stale documents
+  let deleted = 0;
+  try {
+    const exported = await getTypesenseClient()
+      .collections(COLLECTION)
+      .documents()
+      .export({ include_fields: "id" });
+
+    const tsIds = exported
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => (JSON.parse(line) as { id: string }).id);
+
+    const staleIds = tsIds.filter((id) => !pgIds.has(id));
+    deleted = staleIds.length;
+
+    if (staleIds.length > 0) {
+      await Promise.all(staleIds.map((id) => deleteFromTypesense(id)));
+      console.log(`[Typesense] Deleted ${staleIds.length} stale document(s).`);
+    }
+  } catch (err) {
+    console.error("[Typesense] Stale-record cleanup failed:", err);
+  }
+
+  console.log(`[Typesense] Full sync complete — ${records.length} upserted, ${deleted} deleted.`);
+  return { upserted: records.length, deleted };
 }

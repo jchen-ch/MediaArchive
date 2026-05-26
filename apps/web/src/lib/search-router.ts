@@ -12,8 +12,9 @@ export function useSearchRouter() {
   useEffect(() => {
     const middleware = () => {
       return {
-        onStateChange({ uiState }: { uiState: any }) {
+        onStateChange({ uiState }: { uiState: Record<string, { query?: string; refinementList?: Record<string, string[]>; page?: number } | undefined> }) {
           const searchState = uiState.media_records;
+          if (!searchState) return;
           const params = new URLSearchParams();
 
           if (searchState.query && searchState.query !== "*") {

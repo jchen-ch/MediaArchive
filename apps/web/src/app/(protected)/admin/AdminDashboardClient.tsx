@@ -64,6 +64,12 @@ export function AdminDashboardClient({ users: initialUsers, stats }: Props) {
   // State
   const [users, setUsers] = useState(initialUsers);
   const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    upserted: number;
+    deleted: number;
+    durationMs: number;
+  } | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Create user form state
   const [newName, setNewName] = useState("");
@@ -75,11 +81,19 @@ export function AdminDashboardClient({ users: initialUsers, stats }: Props) {
 
   async function handleSync() {
     setSyncing(true);
+    setSyncResult(null);
+    setSyncError(null);
     try {
       const res = await fetch("/api/hono/sync", { method: "POST" });
+      const data = await res.json();
       if (res.ok) {
+        setSyncResult({ upserted: data.upserted, deleted: data.deleted, durationMs: data.durationMs });
         router.refresh();
+      } else {
+        setSyncError(data.error ?? "Sync failed");
       }
+    } catch {
+      setSyncError("Network error");
     } finally {
       setSyncing(false);
     }
@@ -237,6 +251,15 @@ export function AdminDashboardClient({ users: initialUsers, stats }: Props) {
                     />
                     {syncing ? "Syncing..." : "Start Sync"}
                   </Button>
+                  {syncResult && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {formatNumberEnUS(syncResult.upserted)} upserted,{" "}
+                      {syncResult.deleted} deleted — {syncResult.durationMs}ms
+                    </p>
+                  )}
+                  {syncError && (
+                    <p className="mt-2 text-sm text-destructive">{syncError}</p>
+                  )}
                 </CardContent>
               </Card>
 

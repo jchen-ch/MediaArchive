@@ -50,18 +50,19 @@ export const recordsRouter = new Hono<AppEnv>()
       const userId = c.get("userId");
       const record = await createRecord(body, userId);
       return c.json({ data: record }, 201);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating record:", error);
+      const prismaError = error as { code?: string };
 
       // Handle Prisma unique constraint error
-      if (error.code === 'P2002') {
+      if (prismaError.code === 'P2002') {
         return c.json({
           error: "A record with this Kaltura ID already exists. Please use a different Kaltura ID or leave it empty."
         }, 409); // 409 Conflict
       }
 
       // Handle other Prisma errors
-      if (error.code?.startsWith('P')) {
+      if (prismaError.code?.startsWith('P')) {
         return c.json({
           error: "Database error occurred while creating record."
         }, 500);

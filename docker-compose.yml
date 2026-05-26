@@ -14,7 +14,7 @@ volumes:
 
 services:
 
-  # ─── 1. PostgreSQL 18 + pgvector ─────────────────────────────────
+  # ─── 1. PostgreSQL 17 + pgvector ─────────────────────────────────
   postgres:
     image: pgvector/pgvector:pg17
     container_name: mediaarchive_postgres

@@ -9,7 +9,7 @@ export const syncRouter = new Hono<AppEnv>()
   // POST /api/hono/sync — ADMIN only: full PG → Typesense re-index
   .post("/", verifyRole("ADMIN"), async (c) => {
     const start = Date.now();
-    await fullSyncToTypesense();
+    const { upserted, deleted } = await fullSyncToTypesense();
     const durationMs = Date.now() - start;
 
     // Store last sync time for admin dashboard
@@ -17,6 +17,8 @@ export const syncRouter = new Hono<AppEnv>()
 
     return c.json({
       message: "Full sync complete",
+      upserted,
+      deleted,
       durationMs,
     });
   });
